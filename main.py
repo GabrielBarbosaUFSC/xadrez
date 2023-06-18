@@ -1,11 +1,14 @@
 from classesfile import *
+from interface import *
 
 chess = ChessGame()
+interface = ChessGameGUI()
 print("------------------------")
 print("------------------------")
 print(chess)
 chess.up_move(0, 0, False)
 text = "m0000 or p00: "
+interface.run()
 while True:
     print(chess.turn)
     in_ = str(input(text))
