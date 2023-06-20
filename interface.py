@@ -1,6 +1,5 @@
 import pygame
-import os
-import inspect
+import classesfile
 
 # Initialize Pygame
 pygame.init()
@@ -20,37 +19,29 @@ def filepath(path):
 
 # Load chess piece images
 piece_images = {
-    'wp': pygame.image.load(filepath(r'imagens/wp.png')),
-    'wR': pygame.image.load(filepath(r'imagens/wR.png')),
-    'wN': pygame.image.load(filepath(r'imagens/wN.png')),
-    'wB': pygame.image.load(filepath(r'imagens/wB.png')),
-    'wQ': pygame.image.load(filepath(r'imagens/wQ.png')),
-    'wK': pygame.image.load(filepath(r'imagens/wK.png')),
-    'bp': pygame.image.load(filepath(r'imagens/bp.png')),
-    'bR': pygame.image.load(filepath(r'imagens/bR.png')),
-    'bN': pygame.image.load(filepath(r'imagens/bN.png')),
-    'bB': pygame.image.load(filepath(r'imagens/bB.png')),
-    'bQ': pygame.image.load(filepath(r'imagens/bQ.png')),
-    'bK': pygame.image.load(filepath(r'imagens/bK.png'))
+    'White': {
+        'Pawn': pygame.image.load('imagens/wp.png'),
+        'Rook': pygame.image.load('imagens/wR.png'),
+        'Knight': pygame.image.load('imagens/wN.png'),
+        'Bishop': pygame.image.load('imagens/wB.png'),
+        'Queen': pygame.image.load('imagens/wQ.png'),
+        'King': pygame.image.load('imagens/wK.png'),
+    },
+    'Black': {
+        'Pawn': pygame.image.load('imagens/bp.png'),
+        'Rook': pygame.image.load('imagens/bR.png'),
+        'Knight': pygame.image.load('imagens/bN.png'),
+        'Bishop': pygame.image.load('imagens/bB.png'),
+        'Queen': pygame.image.load('imagens/bQ.png'),
+        'King': pygame.image.load('imagens/bK.png')
+    }
 }
 
 
 class ChessGameGUI:
-    def __init__(self):
+    def __init__(self, chess):
         # Initial state of the chessboard
-        self.chess_board = [
-            ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
-            ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
-            [" ", " ", " ", " ", " ", " ", " ", " "],
-            [" ", " ", " ", " ", " ", " ", " ", " "],
-            [" ", " ", " ", " ", " ", " ", " ", " "],
-            [" ", " ", " ", " ", " ", " ", " ", " "],
-            ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-            ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
-        ]
-        self.whiteToMove = True
-        self.moveLog = []
-
+        self.chess = chess
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Chess Game")
         self.clock = pygame.time.Clock()
@@ -65,22 +56,30 @@ class ChessGameGUI:
                 pygame.draw.rect(self.screen, color,
                                  (x, y, SQUARE_SIZE, SQUARE_SIZE))
 
+    def move_highlight(self, sqSelected):
+        if sqSelected != ():
+            r, c = sqSelected
+            piece = self.chess.get_piece([r,c])
+            if piece is not None:
+                if piece.color == self.chess.turn:
+                    s = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
+                    s.set_alpha(100)
+                    s.fill(pygame.Color('blue'))
+                    self.screen.blit(s, (c * SQUARE_SIZE, r * SQUARE_SIZE))
+                    s.fill(pygame.Color('green'))
+                    for m in piece.get_moves():
+                        self.screen.blit(s, (m[1] * SQUARE_SIZE, m[0] * SQUARE_SIZE))
+
     def draw_pieces(self):
         for row in range(8):
             for col in range(8):
-                piece = self.chess_board[row][col]
-                if piece != " ":
-                    piece_image = piece_images[piece]
+                piece = self.chess.get_piece([row, col])
+                if piece is not None:
+                    piece_image = piece_images[piece.color][piece.type]
                     piece_rect = piece_image.get_rect()
                     piece_rect.topleft = (col * SQUARE_SIZE, row * SQUARE_SIZE)
                     self.screen.blit(piece_image, piece_rect)
     
-    def make_move(self, move):
-        self.chess_board[move.startrow][move.startcol] = " "
-        self.chess_board[move.endrow][move.endcol] = move.pieceMoved
-        self.moveLog.append(move)
-        self.whiteToMove = not self.whiteToMove
-
     def run(self):
         running = True
         sqSelected = ()
@@ -100,43 +99,23 @@ class ChessGameGUI:
                     else:
                         sqSelected = (row, col)
                         playerClicks.append(sqSelected)
+                    if len(playerClicks) == 1:
+                        piece = self.chess.get_piece(playerClicks[0])
+                        if piece is None:
+                            sqSelected = ()
+                            playerClicks = []
                     if len(playerClicks) == 2:
-                        move = Move(playerClicks[0], playerClicks[1], self.chess_board)
-                        print(move.getChessNotation())
-                        self.make_move(move)
+                        startrow, startcol = playerClicks[0]
+                        endrow, endcol = playerClicks[1]
+                        self.chess.up_move([startrow, startcol], [endrow, endcol])
                         sqSelected = ()
                         playerClicks = []
 
             self.draw_board()
+            self.move_highlight(sqSelected)
             self.draw_pieces()
 
             pygame.display.flip()
             self.clock.tick(FPS)
 
         pygame.quit()
-
-class Move():
-    ranksToRows = {"1": 7, "2": 6, "3": 5, "4": 4,
-                   "5": 3, "6": 2, "7": 1, "8": 0}
-    rowsToRanks = {v: k for k, v in ranksToRows.items()}
-    filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3,
-                   "e": 4, "f": 5, "g": 6, "h": 7}
-    colsToFiles = {v: k for k, v in filesToCols.items()}
-
-    def __init__(self, startsq, endsq, board):
-        self.startrow = startsq[0]
-        self.startcol = startsq[1]
-        self.endrow = endsq[0]
-        self.endcol = endsq[1]
-        self.pieceMoved = board[self.startrow][self.startcol]
-        self.pieceCaptured = board[self.endrow][self.endcol]
-    
-    def getChessNotation(self):
-        return self.getRankFile(self.startrow, self.startcol) + self.getRankFile(self.endrow, self.endcol)
-
-    def getRankFile(self, r, c):
-        return self.colsToFiles[c] + self.rowsToRanks[r]
-
-if __name__ == '__main__':
-    game = ChessGameGUI()
-    game.run()
