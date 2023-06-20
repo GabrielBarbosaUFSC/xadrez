@@ -24,7 +24,10 @@ class ChessPiece:
 
         #Usado para printar o tabuleiro no terminal
         self.str = ColoredText(symbol, self.get_color_text()) 
-    
+
+    def get_moves(self):
+        return self.moves
+
     #Muda a posição de uma peça
     def change(self, new_pos):
         self.played = True
@@ -132,9 +135,6 @@ class Pawn(ChessPiece):
     #idem da torre
     def __init__(self, pos, color):
         super().__init__("Pawn", pos, color, "P")
-
-    def get_moves(self):
-        return self.moves
 
     #modifica o método way para o peão
     def way(self, dx, dy, piece_matrix, attack = False):
