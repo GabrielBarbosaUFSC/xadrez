@@ -13,6 +13,10 @@ FPS = 60
 WHITE = (255, 255, 255)
 GRAY = (128, 128, 128)
 
+def filepath(path):
+    filepath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    return os.path.join(filepath, path) 
+
 # Load chess piece images
 piece_images = {
     'White': {
