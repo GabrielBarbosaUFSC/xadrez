@@ -1,4 +1,6 @@
 import pygame
+import os
+import inspect
 
 # Initialize Pygame
 pygame.init()
@@ -12,20 +14,24 @@ FPS = 60
 WHITE = (255, 255, 255)
 GRAY = (128, 128, 128)
 
+def filepath(path):
+    filepath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+    return os.path.join(filepath, path) 
+
 # Load chess piece images
 piece_images = {
-    'wp': pygame.image.load('imagens/wp.png'),
-    'wR': pygame.image.load('imagens/wR.png'),
-    'wN': pygame.image.load('imagens/wN.png'),
-    'wB': pygame.image.load('imagens/wB.png'),
-    'wQ': pygame.image.load('imagens/wQ.png'),
-    'wK': pygame.image.load('imagens/wK.png'),
-    'bp': pygame.image.load('imagens/bp.png'),
-    'bR': pygame.image.load('imagens/bR.png'),
-    'bN': pygame.image.load('imagens/bN.png'),
-    'bB': pygame.image.load('imagens/bB.png'),
-    'bQ': pygame.image.load('imagens/bQ.png'),
-    'bK': pygame.image.load('imagens/bK.png')
+    'wp': pygame.image.load(filepath(r'imagens/wp.png')),
+    'wR': pygame.image.load(filepath(r'imagens/wR.png')),
+    'wN': pygame.image.load(filepath(r'imagens/wN.png')),
+    'wB': pygame.image.load(filepath(r'imagens/wB.png')),
+    'wQ': pygame.image.load(filepath(r'imagens/wQ.png')),
+    'wK': pygame.image.load(filepath(r'imagens/wK.png')),
+    'bp': pygame.image.load(filepath(r'imagens/bp.png')),
+    'bR': pygame.image.load(filepath(r'imagens/bR.png')),
+    'bN': pygame.image.load(filepath(r'imagens/bN.png')),
+    'bB': pygame.image.load(filepath(r'imagens/bB.png')),
+    'bQ': pygame.image.load(filepath(r'imagens/bQ.png')),
+    'bK': pygame.image.load(filepath(r'imagens/bK.png'))
 }
 
 
