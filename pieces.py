@@ -24,7 +24,10 @@ class ChessPiece:
 
         #Usado para printar o tabuleiro no terminal
         self.str = ColoredText(symbol, self.get_color_text()) 
-    
+
+    def get_moves(self):
+        return self.moves
+
     #Muda a posição de uma peça
     def change(self, new_pos):
         self.played = True
@@ -479,3 +482,6 @@ class ChessGame:
                 y = move[1]
                 matrix[x][y].color = Fore.BLUE
         print(self.str_matrix(matrix))
+    
+    def get_piece(self, pos):
+        return self.piece_matrix[pos[0]][pos[1]]
