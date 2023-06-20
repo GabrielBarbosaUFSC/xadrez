@@ -133,6 +133,9 @@ class Pawn(ChessPiece):
     def __init__(self, pos, color):
         super().__init__("Pawn", pos, color, "P")
 
+    def get_moves(self):
+        return self.moves
+
     #modifica o método way para o peão
     def way(self, dx, dy, piece_matrix, attack = False):
         pos = [self.pos[0] +dx, self.pos[1]+dy]

@@ -1,4 +1,5 @@
 import pygame
+import classesfile
 
 # Initialize Pygame
 pygame.init()
@@ -59,6 +60,19 @@ class ChessGameGUI:
                 pygame.draw.rect(self.screen, color,
                                  (x, y, SQUARE_SIZE, SQUARE_SIZE))
 
+    def move_highlight(self, sqSelected, validMoves):
+        if sqSelected != ():
+            r, c = sqSelected
+            if self.chess_board[r][c][0] == ('w' if self.whiteToMove else 'b'):
+                s = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
+                s.set_alpha(100)
+                s.fill(pygame.Color('blue'))
+                self.screen.blit(s, (c * SQUARE_SIZE, r * SQUARE_SIZE))
+                # s.fill(pygame.color('green'))
+                for m in validMoves:
+                    if m.startRow == r and m.startCol == c:
+                        self.screen.blit(s, (m.endCol * SQUARE_SIZE, m.endRow * SQUARE_SIZE))
+
     def draw_pieces(self):
         for row in range(8):
             for col in range(8):
@@ -74,11 +88,37 @@ class ChessGameGUI:
         self.chess_board[move.endrow][move.endcol] = move.pieceMoved
         self.moveLog.append(move)
         self.whiteToMove = not self.whiteToMove
+    
+    def possible_moves(self):
+        moves = []
+        for row in range(len(self.chess_board)):
+            for col in range(len(self.chess_board[row])):
+                turn = self.chess_board[row][col][0]
+                if (turn == 'w' and self.whiteToMove) and (turn == 'b' and not self.whiteToMove):
+                    piece_id = self.chess_board[row][col][1]
+                    if piece_id == 'p':
+                        piece = classesfile.Pawn([row][col], [row][col][0])
+                    elif piece_id == 'R':
+                        piece = classesfile.Rook([row][col], [row][col][0])
+                        return piece
+                    elif piece_id == 'N':
+                        piece = classesfile.Knight([row][col], [row][col][0])
+                        return piece
+                    elif piece_id == 'B':
+                        piece = classesfile.Bishop([row][col], [row][col][0])
+                        return piece
+                    elif piece_id == 'Q':
+                        piece = classesfile.Queen([row][col], [row][col][0])
+                        return piece
+                    elif piece_id == 'K':
+                        piece = classesfile.King([row][col], [row][col][0])
+                        return piece
 
     def run(self):
         running = True
         sqSelected = ()
         playerClicks = []
+        moves = self.possible_moves()
 
         while running:
             for event in pygame.event.get():
@@ -102,6 +142,7 @@ class ChessGameGUI:
                         playerClicks = []
 
             self.draw_board()
+            self.move_highlight(sqSelected, moves)
             self.draw_pieces()
 
             pygame.display.flip()
@@ -109,6 +150,7 @@ class ChessGameGUI:
 
         pygame.quit()
 
+# classe que move a peça de xadrez
 class Move():
     ranksToRows = {"1": 7, "2": 6, "3": 5, "4": 4,
                    "5": 3, "6": 2, "7": 1, "8": 0}
