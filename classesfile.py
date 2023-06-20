@@ -371,3 +371,6 @@ class ChessGame:
                 y = move[1]
                 matrix[x][y].color = Fore.BLUE
         print(self.str_matrix(matrix))
+    
+    def get_piece(self, pos):
+        return self.piece_matrix[pos[0]][pos[1]]
