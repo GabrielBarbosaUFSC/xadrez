@@ -1,5 +1,7 @@
 import pygame
-import classesfile
+import pieces
+import os
+import inspect
 
 # Initialize Pygame
 pygame.init()
@@ -20,20 +22,20 @@ def filepath(path):
 # Load chess piece images
 piece_images = {
     'White': {
-        'Pawn': pygame.image.load('imagens/wp.png'),
-        'Rook': pygame.image.load('imagens/wR.png'),
-        'Knight': pygame.image.load('imagens/wN.png'),
-        'Bishop': pygame.image.load('imagens/wB.png'),
-        'Queen': pygame.image.load('imagens/wQ.png'),
-        'King': pygame.image.load('imagens/wK.png'),
+        'Pawn': pygame.image.load(filepath('imagens/wp.png')),
+        'Rook': pygame.image.load(filepath('imagens/wR.png')),
+        'Knight': pygame.image.load(filepath('imagens/wN.png')),
+        'Bishop': pygame.image.load(filepath('imagens/wB.png')),
+        'Queen': pygame.image.load(filepath('imagens/wQ.png')),
+        'King': pygame.image.load(filepath('imagens/wK.png')),
     },
     'Black': {
-        'Pawn': pygame.image.load('imagens/bp.png'),
-        'Rook': pygame.image.load('imagens/bR.png'),
-        'Knight': pygame.image.load('imagens/bN.png'),
-        'Bishop': pygame.image.load('imagens/bB.png'),
-        'Queen': pygame.image.load('imagens/bQ.png'),
-        'King': pygame.image.load('imagens/bK.png')
+        'Pawn': pygame.image.load(filepath('imagens/bp.png')),
+        'Rook': pygame.image.load(filepath('imagens/bR.png')),
+        'Knight': pygame.image.load(filepath('imagens/bN.png')),
+        'Bishop': pygame.image.load(filepath('imagens/bB.png')),
+        'Queen': pygame.image.load(filepath('imagens/bQ.png')),
+        'King': pygame.image.load(filepath('imagens/bK.png'))
     }
 }
 

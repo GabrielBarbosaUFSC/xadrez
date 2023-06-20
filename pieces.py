@@ -491,6 +491,13 @@ class ChessGame:
                     if piece.color != self.turn:
                         piece.moves = []
 
+        if self.turn == "White":
+            if not self.poswhiteking in self.attackedplacesbyblack:
+                return
+        else:
+            if not self.posblackking in self.attackedplacesbywhite:
+                return
+        
         moves_to_block = []
         for row in self.piece_matrix:
             for piece in row:
