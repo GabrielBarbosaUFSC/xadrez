@@ -132,6 +132,15 @@ class Pawn(ChessPiece):
     #idem da torre
     def __init__(self, pos, color):
         super().__init__("Pawn", pos, color, "P")
+        self.availableenpassant = False
+
+        #Se as peças forem pretas o sentido de "para frente" é ao contrário
+        self.invert = 1
+        if self.color == "Black": #Se 
+            self.invert = -1
+
+        self.posenpassant = [self.pos[0]+self.invert, self.pos[1]]
+        self.enpassantmoves = []
 
     #modifica o método way para o peão
     def way(self, dx, dy, piece_matrix, attack = False):
@@ -155,30 +164,47 @@ class Pawn(ChessPiece):
             if piece.color != self.color:
                 self.moves.append(piece.pos)
 
+        #en passant
+        posn = [self.pos[0], pos[1]]
+        piece = self.check(piece_matrix, pos)
+        if piece != None:
+            if piece.color != self.color:
+                if piece.type == "Pawn":
+                    if piece.availableenpassant == True:
+                        self.moves.append(piece.posenpassant)
+                        self.enpassantmoves.append(piece.posenpassant)
+
     #Atualiza os movimentos do peão
     def up_move(self, piece_matrix):
         self.moves = []
-        #Se as peças forem pretas o sentido de "para frente" é ao contrário
-        invert = 1
-        if self.color == "Black": #Se 
-            invert = -1
-
+        self.enpassantmoves = []
+        
         #Verifica se é o primeiro movimento
         if not self.played:
-            self.way(2*invert, 0, piece_matrix)
+            self.way(2*self.invert, 0, piece_matrix)
         
         #Verifica se a casa da frente esta livre
-        self.way(1*invert, 0, piece_matrix)
+        self.way(1*self.invert, 0, piece_matrix)
 
         #Verifica as casas possíveis de serem atacadas
-        self.way(1*invert, 1, piece_matrix ,True)
-        self.way(1*invert, -1, piece_matrix ,True)
+        self.way(1*self.invert, 1, piece_matrix ,True)
+        self.way(1*self.invert, -1, piece_matrix ,True)
+
+    def change(self, new_pos):
+        if self.played == False and abs(new_pos[0] - self.pos[1]) > 1:
+            self.availableenpassant = True
+        else:
+            self.availableenpassant = False
+
+        self.played = True
+        self.pos = new_pos
 
 #Define uma classe filha de ChessPiece: King (Rei)
 class King(ChessPiece):
     #idem torre
     def __init__(self, pos, color):
         super().__init__("King", pos, color, "K")
+        self.castlingmoves = []
 
     #define o movimento do rei sem recursividade 
     def way(self, dx, dy, piece_matrix):
@@ -186,9 +212,25 @@ class King(ChessPiece):
         if self.inboard(pos):
             self.addmove(piece_matrix, pos)
 
+    def castling(self, pos, dy, piece_matrix):
+        if not self.played:
+            npos = [pos[0], pos[1]+dy]
+            if self.inboard(pos):
+                piece = self.check(piece_matrix, pos)
+                if piece == None:
+                    self.castling(npos, dy, piece_matrix)
+                elif piece.type ==  "Rook":
+                    if piece.played == False:
+                        self.castlingmoves.append(piece.pos)
+                        self.moves.append(piece.pos)
+                        return True
+        return False
+
     #atualiza o movimento do rei
     def up_move(self, piece_matrix, attackedplaces):
         self.moves = []
+        self.castlingmoves = []
+
         #Tenta se mover pra cada direção
         for i in [-1, 0, 1]:
             for j in [-1, 0, 1]:
@@ -196,6 +238,11 @@ class King(ChessPiece):
                     continue
                 else:
                     self.way(i, j, piece_matrix)
+
+        if not self.pos in attackedplaces:
+            self.castling(self.pos, 1, piece_matrix)
+            self.castling(self.pos, -1, piece_matrix)
+        
         #Verifica as casas atacadas pelas peças adiversárias
         for move in self.moves:
             if move in attackedplaces:
@@ -234,19 +281,83 @@ class ChessGame:
         else:
             self.piece_matrix[pos_[0], pos_[1]] = None
 
+    def en_passant(self, ipos, fpos):
+        piece = self.piece_matrix[ipos[0]][ipos[1]]
+        if piece.type ==  "Pawn":
+            return fpos in self.piece_matrix[ipos[0]][ipos[1]].enpassantmoves
+        return False
+       
+
+    def in_available_moves(self, ipos, fpos):
+        return fpos in self.piece_matrix[ipos[0]][ipos[1]].moves
+    
+    def castling(self, ipos, fpos):
+        piece = self.piece_matrix[ipos[0]][ipos[1]]
+        if piece.type == "King":
+            return fpos in self.piece_matrix[ipos[0]][ipos[1]].castlingmoves
+        return False
+    
+    def move_castling (self, ipos, fpos):
+        d = fpos[1] - ipos[1]
+        fpos_rook = [fpos[0], fpos[1] - (d/abs(d))*2]
+        fpos_king = [ipos[0], ipos[1] + d - 1]
+
+
+        self.piece_matrix[fpos_rook[0]][fpos_rook[1]] = self.piece_matrix[fpos[0]][fpos[1]] #move rook   
+        self.piece_matrix[fpos_king[0]][fpos_king[1]] = self.piece_matrix[ipos[0]][ipos[1]] #move king            
+                
+        self.piece_matrix[fpos_rook[0]][fpos_rook[1]].change(fpos_rook)
+        self.piece_matrix[fpos_king[0]][fpos_king[1]].change(fpos_king)
+
+        self.piece_matrix[ipos[0]][ipos[1]] = None
+        self.piece_matrix[fpos[0]][fpos[1]] = None
+
+
+    def move_default (self, ipos, fpos):
+        #modifica a MATRIX de posições
+        self.piece_matrix[fpos[0]][fpos[1]] = self.piece_matrix[ipos[0]][ipos[1]]
+
+        #modifica a posição da peça na classe
+        self.piece_matrix[fpos[0]][fpos[1]].change(fpos)
+
+        #coloca "None" na posiçaõ inicial da peça
+        self.piece_matrix[ipos[0]][ipos[1]] = None
+        
+    def av_promotion(self, ipos, fpos):
+        if self.piece_matrix[ipos[0]][ipos[1]].type == "Pawn":
+            if fpos[1] == 7 or fpos[1] == 0:
+                return True
+        return False
+    
+    def do_promotion(self, ipos, fpos, promotion):
+        if promotion == "Bishop":
+            new_piece = Bishop(fpos, self.turn)
+        elif promotion == "Rook":
+            new_piece = Rook(fpos, self.turn)
+        elif promotion == "Queen":
+            new_piece = Queen(fpos, self.turn)
+        elif promotion == "Knight":
+            new_piece = Knight(fpos, self.turn)
+
+        self.piece_matrix[fpos[0]][fpos[1]] = new_piece
+        self.piece_matrix[ipos[0]][ipos[1]] = None
+
+
     #Move uma peça de uma posição inicial para outra
     #Retorna verdadeiro se aquela posição final é possível
-    def move (self, ipos, fpos):
+    def move (self, ipos, fpos, promotion = None):
         #Verifica se esse movimento é permitido
-        if fpos in self.piece_matrix[ipos[0]][ipos[1]].moves:
-            #modifica a MATRIX de posições
-            self.piece_matrix[fpos[0]][fpos[1]] = self.piece_matrix[ipos[0]][ipos[1]]
+        if self.in_available_moves(ipos, fpos):
+            if self.castling(ipos, fpos):
+                self.move_castling(ipos, fpos)
+            elif self.av_promotion(ipos, fpos):
+                self.do_promotion
+            else:
+                self.move_default(ipos, fpos)
 
-            #modifica a posição da peça na classe
-            self.piece_matrix[fpos[0]][fpos[1]].change(fpos)
+                if self.en_passant:
+                    self.piece_matrix[ipos[0]][fpos[1]] = None
 
-            #coloca "None" na posiçaõ inicial da peça
-            self.piece_matrix[ipos[0]][ipos[1]] = None
             return True
         return False
 

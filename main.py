@@ -1,4 +1,4 @@
-from classesfile import *
+from pieces import *
 from interface import *
 
 chess = ChessGame()
