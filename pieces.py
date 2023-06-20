@@ -24,6 +24,8 @@ class ChessPiece:
 
         #Usado para printar o tabuleiro no terminal
         self.str = ColoredText(symbol, self.get_color_text()) 
+        self.movestoking = None
+        self.findking = False
 
     def get_moves(self):
         return self.moves
@@ -46,8 +48,11 @@ class ChessPiece:
         if piece != None:
             if piece.color != self.color:
                 self.moves.append(pos)
+                if piece.type == "King":
+                    self.findking = True
             return True
         else:
+            self.movestoking.append(pos)
             self.moves.append(pos)
             return False
         
@@ -82,7 +87,27 @@ class ChessPiece:
     #Printa o texto (Usado para o terminal)
     def __str__(self) -> str:
         return str(self.str)
-
+    
+    def check_block_king(self, piece_matrix):
+        for row in piece_matrix:
+            for piece in row:
+                if piece != None:
+                    if piece.type == "King" and piece.color == self.color:
+                        king_pos = piece.pos
+                        break
+        
+        piece_matrix_copy = piece_matrix.copy()
+        piece_matrix_copy[self.pos[0]][self.pos[1]] = None
+        for row in piece_matrix_copy:
+            for piece in row:
+                if piece != None:
+                    if piece.color != self.color:
+                        piece.up_move(piece_matrix_copy)
+                        #Adiciona as peças nas casas atacadas
+                        if king_pos in piece.moves:
+                            return True     
+        return False
+         
 #Define uma classe filha de ChessPiece: Rook (Torre)
 class Rook(ChessPiece):
     #inicia a classe definindo o tipo como "Rook"
@@ -92,6 +117,10 @@ class Rook(ChessPiece):
     #Define uma rotina para atualizar as possiveis jogadas da torre 
     def up_move(self, piece_matrix):
         self.moves = [] #Zera as possíveis jogadas
+        self.movestoking = []
+        self.findking =  False
+        if self.check_block_king:
+            return
         #define os sentidos do movimento da torre (pra cima, pra baixo, pra esquerda e pra direita)
         moves = [[1, 0], [-1, 0], [0, -1], [0, 1]] 
         for move in moves:
@@ -106,6 +135,10 @@ class Bishop(ChessPiece):
     #Mesma lógica da torre, mas pras diagonais
     def up_move(self, piece_matrix):
         self.moves = []
+        self.movestoking = []
+        self.findking =  False
+        if self.check_block_king:
+            return
         moves = [[1, 1], [1, -1], [-1, 1], [-1, -1]]
         for move in moves:
             self.way(self.pos,  move[0],  move[1], piece_matrix)
@@ -125,6 +158,10 @@ class Knight(ChessPiece):
     #atualiza os movimentos do cavalo
     def up_move(self, piece_matrix):
         self.moves = []
+        self.movestoking = []
+        self.findking =  False
+        if self.check_block_king:
+            return
         #Tenta todas os oito possíveis jogadas do cavalo
         moves = [[1, 2], [-1, 2], [1, -2], [-1, -2], [2, 1], [2,-1], [-2,1], [-2, -1]]
         for move in moves:
@@ -181,6 +218,10 @@ class Pawn(ChessPiece):
     def up_move(self, piece_matrix):
         self.moves = []
         self.enpassantmoves = []
+        self.movestoking = []
+        self.findking =  False
+        if self.check_block_king:
+            return
         
         #Verifica se é o primeiro movimento
         if not self.played:
@@ -233,6 +274,10 @@ class King(ChessPiece):
     def up_move(self, piece_matrix, attackedplaces):
         self.moves = []
         self.castlingmoves = []
+        self.movestoking = []
+        self.findking =  False
+        if self.check_block_king:
+            return
 
         #Tenta se mover pra cada direção
         for i in [-1, 0, 1]:
@@ -260,6 +305,10 @@ class Queen(ChessPiece):
     #Atualiza os movimentos da rainha
     def up_move(self, piece_matrix):
         self.moves = []
+        self.movestoking = []
+        self.findking =  False
+        if self.check_block_king:
+            return
         for i in [-1, 0, 1]: #tenta cada direção
             for j in [-1, 0, 1]:
                 if i==0 and j ==0: #menos a direção 00
@@ -275,6 +324,9 @@ class ChessGame:
         self.attackedplacesbyblack = []
         self.attackedplacesbywhite = []
         self.turn = "White"
+        self.incheck = None
+        self.posblackking = None
+        self.poswhiteking = None
 
     #substitui a peça em determinada posição da matriz de peças (Usado para posicionar as peças)
     def replace (self, new_piece, pos_ = None):
@@ -290,7 +342,6 @@ class ChessGame:
             return fpos in self.piece_matrix[ipos[0]][ipos[1]].enpassantmoves
         return False
        
-
     def in_available_moves(self, ipos, fpos):
         return fpos in self.piece_matrix[ipos[0]][ipos[1]].moves
     
@@ -314,7 +365,6 @@ class ChessGame:
 
         self.piece_matrix[ipos[0]][ipos[1]] = None
         self.piece_matrix[fpos[0]][fpos[1]] = None
-
 
     def move_default (self, ipos, fpos):
         #modifica a MATRIX de posições
@@ -344,7 +394,6 @@ class ChessGame:
 
         self.piece_matrix[fpos[0]][fpos[1]] = new_piece
         self.piece_matrix[ipos[0]][ipos[1]] = None
-
 
     #Move uma peça de uma posição inicial para outra
     #Retorna verdadeiro se aquela posição final é possível
@@ -429,8 +478,10 @@ class ChessGame:
                 if piece != None:
                     if piece.type == "King":
                         if piece.color == "Black":
+                            self.posblackking = piece.pos
                             piece.up_move(self.piece_matrix, self.attackedplacesbywhite)
                         else:
+                            self.poswhiteking = piece.pos
                             piece.up_move(self.piece_matrix, self.attackedplacesbyblack)
 
         #Zera os possiveis movimentos do jogador que não está jogando
@@ -439,6 +490,35 @@ class ChessGame:
                 if piece != None:
                     if piece.color != self.turn:
                         piece.moves = []
+
+        moves_to_block = []
+        for row in self.piece_matrix:
+            for piece in row:
+                if piece != None:
+                    if piece.color != self.turn:
+                        if piece.findking:
+                            moves_to_block = piece.movestoking.copy()
+                            moves_to_block.append(piece.pos)
+                            break
+
+        if len(moves_to_block) != 0:
+            self.incheck = self.turn
+        else:
+            self.incheck = None
+
+        count_moves = 0
+        if self.incheck:
+            for row in self.piece_matrix:
+                for piece in row:
+                    if piece != None:
+                        if piece.type != "King":
+                            if piece.color == self.turn:
+                                for move in piece.moves:
+                                    if not move in moves_to_block:
+                                        piece.moves.remove(move)
+                                count_moves += len(piece.moves)
+        if count_moves == 0:
+            print(f"Loser: {self.turn}")
 
     #Gera uma matriz de COloredTExt (usado para printar no terminal)
     def generate_matrix(self):
