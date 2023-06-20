@@ -38,8 +38,6 @@ class ChessGameGUI:
     def __init__(self, chess):
         # Initial state of the chessboard
         self.chess = chess
-        self.moveLog = []
-
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Chess Game")
         self.clock = pygame.time.Clock()
@@ -66,8 +64,7 @@ class ChessGameGUI:
                     self.screen.blit(s, (c * SQUARE_SIZE, r * SQUARE_SIZE))
                     s.fill(pygame.Color('green'))
                     for m in piece.get_moves():
-                        if m[0] == r and m[1] == c:
-                            self.screen.blit(s, (m.endCol * SQUARE_SIZE, m.endRow * SQUARE_SIZE))
+                        self.screen.blit(s, (m[1] * SQUARE_SIZE, m[0] * SQUARE_SIZE))
 
     def draw_pieces(self):
         for row in range(8):
@@ -98,7 +95,6 @@ class ChessGameGUI:
                     else:
                         sqSelected = (row, col)
                         playerClicks.append(sqSelected)
-                        self.move_highlight(sqSelected)
                     if len(playerClicks) == 1:
                         piece = self.chess.get_piece(playerClicks[0])
                         if piece is None:
@@ -112,6 +108,7 @@ class ChessGameGUI:
                         playerClicks = []
 
             self.draw_board()
+            self.move_highlight(sqSelected)
             self.draw_pieces()
 
             pygame.display.flip()
