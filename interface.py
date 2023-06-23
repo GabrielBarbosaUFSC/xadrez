@@ -1,5 +1,5 @@
 import pygame
-import pieces
+import classes
 import os
 import inspect
 
@@ -77,7 +77,8 @@ class ChessGameGUI:
             for col in range(8):
                 piece = self.chess.get_piece([row, col])
                 if piece is not None:
-                    piece_image = piece_images[piece.color][piece.type]
+                    #piece_image = piece_images[piece.color][piece.type]
+                    piece_image = piece.get_image()
                     piece_rect = piece_image.get_rect()
                     piece_rect.topleft = (col * SQUARE_SIZE, row * SQUARE_SIZE)
                     self.screen.blit(piece_image, piece_rect)
